@@ -1,20 +1,48 @@
 <html>
     <head>
+    <script
+      src="https://code.jquery.com/jquery-3.1.1.js"
+      integrity="sha256-16cdPddA6VdVInumRGo6IbivbERE8p7CQR3HzTBuELA="
+      crossorigin="anonymous"></script>
+
+    <script type="text/javascript">
+    console.log("HSLDJFNKLADSJNFLSKDNFLSD");
+
+$(function() {
+
+    var populateAlarms = function() {
+        $.getJSON("/api/alarms", function(data) {
+            var alarmsList = $("#alarmsList");
+            alarmsList.empty();
+            $(data.alarms).each( function(index, item) {
+                var alarmString = "<li>" + item.id + item.content +  "<div class='upvoteSymbol'>" + item.upvotes + "</div></li>";
+                alarmsList.append(alarmString);
+            });
+
+            function greet( event ) {
+          alert( "Hello " + event.data.name );
+        }
+        $( ".upvoteSymbol" ).on( "click", {
+          name: "Karl"
+        }, greet );
+
+        });
+    };
+
+    populateAlarms();
+});
+    </script>
     </head>
 <body>
     Hello, flask!
-    <div class="createalarms">
+    <div class="createAlarms">
         <form id="alarms" action="/" method="post">
             <input type="text" name="content" id="content"/>
             <input type="submit" value="Submit" />
         </form>
     </div>
-    <div class="listalarms">
-        {% for alarm in alarms %}
-        <div class="alarm">
-            <span class="content">{{ alarm.content }}</div>
-        </div>
-        {% endfor %}
+    <div id="alarmsList">
+        
     </div>
 </body>
 </html>

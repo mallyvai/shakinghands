@@ -39,6 +39,19 @@ class Alarm(db.Model):
     def get_alarms(cls):
         return cls.query.all()
 
+    @classmethod
+    def upvote_alarm(cls, alarm_id):
+        alarm = Alarms.query.get(id=alarm_id)
+        alarm.upvotes += 1 #TODO - Potential race condition if multiple upvoters try simultaneously.
+        db.session.commit(alarm)
+
+    def serialize(self):
+        return {
+            'id': self.id,
+            'content': self.content,
+            'upvotes': self.upvotes
+        }
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'GET':
@@ -49,6 +62,19 @@ def index():
         Alarm.add_alarm(content)
         alarms = Alarm.get_alarms()
         return render_template('index.html', alarms=alarms)
+
+@app.route('/api/alarms', methods=['POST', 'GET'])
+def upvote_alarms():
+    if request.method == 'POST':
+        print request.json
+        alarm_id = request.json.get('alarmID')
+        Alarm.upvote_alarm(alarm_id)
+        return "Upvoted, yay", 200
+
+    if request.method == 'GET':
+        alarms = [alarm.serialize() for alarm in Alarm.get_alarms()]
+        obj = jsonify({'success': True, 'alarms': alarms})
+        return obj
 
 if __name__ == "__main__":
     if not os.path.exists('db.sqlite'):
