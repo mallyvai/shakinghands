@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import requests
+from celery import Celery
 import os, json
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask, abort, request, jsonify, g, url_for, flash, render_template
@@ -51,6 +53,11 @@ class Alarm(db.Model):
         db.session.add(alarm)
         db.session.commit()
 
+    @classmethod
+    def get_alarm(cls, alarm_id):
+        alarm = cls.query.get(alarm_id)
+        return alarm
+
     def serialize(self):
         return {
             'id': self.id,
@@ -67,6 +74,12 @@ def get_serialized_alarms():
     obj = jsonify({'success': True, 'alarms': alarms})
     return obj
 
+def push_alarm(alarm_id):
+    alarm = Alarm.get_alarm(alarm_id)
+    url = "http://handshake-bellbird.herokuapp.com/push"
+    data = {'alarm_id': alarm.id}
+    requests.post(url=url, json=data)
+    print ("posted to the bellbird push notif endpoint")
 
 
 @app.route('/api/alarms', methods=['POST', 'GET'])
@@ -74,6 +87,7 @@ def upvote_alarms():
     if request.method == 'POST':
         alarm_id = int(request.form.get('id'))
         Alarm.upvote_alarm(alarm_id)
+        push_alarm(alarm_id)
         return get_serialized_alarms()
 
     if request.method == 'GET':
