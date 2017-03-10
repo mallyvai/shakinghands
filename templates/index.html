@@ -9,27 +9,36 @@
     console.log("HSLDJFNKLADSJNFLSKDNFLSD");
 
 $(function() {
-
-    var populateAlarms = function() {
-        $.getJSON("/api/alarms", function(data) {
-            var alarmsList = $("#alarmsList");
-            alarmsList.empty();
-            $(data.alarms).each( function(index, item) {
-                var alarmString = "<li>" + item.id + item.content +  "<div class='upvoteSymbol'>" + item.upvotes + "</div></li>";
-                alarmsList.append(alarmString);
-            });
-
-            function greet( event ) {
-          alert( "Hello " + event.data.name );
-        }
-        $( ".upvoteSymbol" ).on( "click", {
-          name: "Karl"
-        }, greet );
-
+    var manageUpvotes = function() { $( ".upvoteSymbol" ).click(function() {
+            console.log("hello jery!!!");
+            var alarm = $(this).parent();
+            var id = alarm.find(".id").text();
+            var blob = {id: id, blahblah: 'hello jerrryyyy'}
+            console.log(blob);
+            $.ajax({
+                method: "POST",
+                url: "/api/alarms", // TODO define or extract 
+                data: blob,
+                dataType: 'json'
+            }).done(populateAlarms); // TODO Add success/failure handlers
         });
     };
 
-    populateAlarms();
+    var populateAlarms = function(data) {
+            var alarmsList = $("#alarmsList");
+            alarmsList.empty();
+            $(data.alarms).each( function(index, item) {
+                var alarmString = "<li>" + "<span class='id' class='hidden'>" + item.id + "</span>" + item.content +  "<div class='upvoteSymbol'>" + item.upvotes + "</div></li>";
+                alarmsList.append(alarmString);
+            });
+            manageUpvotes();
+    };
+
+    var managePopulateAlarms = function() {
+        $.getJSON("/api/alarms", populateAlarms);
+    };
+
+    managePopulateAlarms();
 });
     </script>
     </head>

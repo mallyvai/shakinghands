@@ -12,6 +12,9 @@ import flask_login
 from flask_login import login_user, LoginManager, login_required
 from urlparse import urlparse, urljoin
 from flask import request, url_for
+from sqlalchemy import desc
+
+
 
 app = Flask(__name__)
 
@@ -26,6 +29,8 @@ class Alarm(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.String(160)) #TODO - What shoudl this length be?
     upvotes = db.Column(db.Integer, default=0)
+    created_on = db.Column(db.DateTime, server_default=db.func.now())
+
 
     @classmethod
     def add_alarm(cls, content):
@@ -37,13 +42,14 @@ class Alarm(db.Model):
     
     @classmethod
     def get_alarms(cls):
-        return cls.query.all()
+        return cls.query.order_by(cls.created_on.desc()).all()
 
     @classmethod
     def upvote_alarm(cls, alarm_id):
-        alarm = Alarms.query.get(id=alarm_id)
+        alarm = cls.query.get(alarm_id)
         alarm.upvotes += 1 #TODO - Potential race condition if multiple upvoters try simultaneously.
-        db.session.commit(alarm)
+        db.session.add(alarm)
+        db.session.commit()
 
     def serialize(self):
         return {
@@ -52,29 +58,26 @@ class Alarm(db.Model):
             'upvotes': self.upvotes
         }
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET'])
 def index():
-    if request.method == 'GET':
-        alarms = Alarm.get_alarms()
-        return render_template('index.html', alarms=alarms)
-    elif request.method == 'POST':
-        content = request.form.get('content')
-        Alarm.add_alarm(content)
-        alarms = Alarm.get_alarms()
-        return render_template('index.html', alarms=alarms)
+    return render_template('index.html')
+
+def get_serialized_alarms():
+    alarms = [alarm.serialize() for alarm in Alarm.get_alarms()]
+    obj = jsonify({'success': True, 'alarms': alarms})
+    return obj
+
+
 
 @app.route('/api/alarms', methods=['POST', 'GET'])
 def upvote_alarms():
     if request.method == 'POST':
-        print request.json
-        alarm_id = request.json.get('alarmID')
+        alarm_id = int(request.form.get('id'))
         Alarm.upvote_alarm(alarm_id)
-        return "Upvoted, yay", 200
+        return get_serialized_alarms()
 
     if request.method == 'GET':
-        alarms = [alarm.serialize() for alarm in Alarm.get_alarms()]
-        obj = jsonify({'success': True, 'alarms': alarms})
-        return obj
+        return get_serialized_alarms()
 
 if __name__ == "__main__":
     if not os.path.exists('db.sqlite'):
