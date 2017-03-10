@@ -21,12 +21,34 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Doesn't seem to suppress 
 
 db = SQLAlchemy(app)
 
-@app.route('/index', methods=['GET', 'POST'])
+class Alarm(db.Model):
+    __tablename__ = 'alarms'
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.String(160)) #TODO - What shoudl this length be?
+    upvotes = db.Column(db.Integer, default=0)
+
+    @classmethod
+    def add_alarm(cls, content):
+        content = content.upper()
+        alarm = cls(content = content)
+        db.session.add(alarm)
+        db.session.commit()
+        return alarm
+    
+    @classmethod
+    def get_alarms(cls):
+        return cls.query.all()
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'GET':
-        return render_template('index.html')
-
+        alarms = Alarm.get_alarms()
+        return render_template('index.html', alarms=alarms)
+    elif request.method == 'POST':
+        content = request.form.get('content')
+        Alarm.add_alarm(content)
+        alarms = Alarm.get_alarms()
+        return render_template('index.html', alarms=alarms)
 
 if __name__ == "__main__":
     if not os.path.exists('db.sqlite'):

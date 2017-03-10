@@ -3,5 +3,18 @@
     </head>
 <body>
     Hello, flask!
+    <div class="createalarms">
+        <form id="alarms" action="/" method="post">
+            <input type="text" name="content" id="content"/>
+            <input type="submit" value="Submit" />
+        </form>
+    </div>
+    <div class="listalarms">
+        {% for alarm in alarms %}
+        <div class="alarm">
+            <span class="content">{{ alarm.content }}</div>
+        </div>
+        {% endfor %}
+    </div>
 </body>
 </html>
