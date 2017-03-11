@@ -65,9 +65,15 @@ class Alarm(db.Model):
             'upvotes': self.upvotes
         }
 
-@app.route('/', methods=['GET'])
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    return render_template('index.html')
+    if request.method == 'GET':
+        return render_template('index.html')
+    elif request.method == 'POST':
+        Alarm.add_alarm(request.form.get('content'))
+        return flask.redirect("/", code=302)
+
+
 
 def get_serialized_alarms():
     alarms = [alarm.serialize() for alarm in Alarm.get_alarms()]
